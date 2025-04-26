@@ -5,10 +5,12 @@
  */
 package book;
 
+import java.awt.Label;
 import java.awt.TextField;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -106,7 +108,13 @@ static String Author_id(String fname , String lname ,Connection connect){
 }
     
 
-static  void clear(TextField[] inputs){
+static  void clear(TextField[] inputs ){
+    
+    for(int i = 0 ; i < inputs.length ; i++)inputs[i].setText("");
+    
+}
+        
+static  void clear(Label [] inputs ){
     
     for(int i = 0 ; i < inputs.length ; i++)inputs[i].setText("");
     
@@ -117,7 +125,7 @@ static  void clear(TextField[] inputs){
 //search tool for search.java 
 // this function control directly in search object :D 
 
-static void get_book_data(Search page , String[] data , Connection connect){
+static boolean get_book_data(Search page , String[] data , Connection connect , Label stat){
     ResultSet result_author , result_book , result_publisher ;
     ResultSet Author_id = null;
     System.out.println("im here pro");
@@ -156,22 +164,81 @@ static void get_book_data(Search page , String[] data , Connection connect){
                 page.pageCount.setText("Page_Count: "+result_book.getString("Page_Count"));
                 page.price.setText("Price: "+result_book.getString("Price"));
                 
+                return true ; 
+                }else{ 
+                stat.setText(String.format("NOT FOUND %s  %s" ,data[0] , data[1] ));
+                stat.setVisible(true);
+                return false ; 
                 }
             
             
             } catch (SQLException ex) {
                 Logger.getLogger(SmallTools.class.getName()).log(Level.SEVERE, null, ex);
+                return false ; 
             }
         
     
     } 
         
         
+//          change with the fields and labels in search :D 
+
+    static void visibilty(Label[] stat,   boolean  set){ 
+             for(int i =0 ; i <  stat.length ; i++)stat[i].setVisible(set);
+
+    }
+     static void visibilty(TextField[] stat , boolean set){ 
+         for(int i =0 ; i <  stat.length ; i++)stat[i].setVisible(set);
+    }
+   
         
         
         
-        
-        
+ public  static boolean update_fun (Connection connect ,String ispn, String title , String type , String price , String page_count , String ispn_real )     {
+       Statement stat;
+       String g = String.format("update BOOK set ISBN = replace('%s' , ' ' , '') , title = replace('%s' , ' ' , '')   , type = replace('%s' , ' ' , '') , price  = replace('%s' , ' ' , '') , page_count = replace('%s' , ' ' , '') where Replace(ISBN , ' ', '')=  Replace('%s' , ' ', '') ",ispn, title , type , price , page_count , ispn_real );
+          String b = String.format("update BOOK_Author set ISBN = replace('%s',' ' ,'') where replace(ISBN ,' ', '') = replace('%s' , ' ' , '')",ispn,ispn_real);
+            System.out.println(b);
+           try {
+                stat = connect.createStatement();
+// close the securty        
+       stat.executeUpdate(String.format("ALTER TABLE BOOK_Author NOCHECK CONSTRAINT FK__BOOK_Autho__ISBN__0DAF0CB0"));
+       System.out.println(g);
+       stat.executeUpdate(g);
+       stat.executeUpdate(b);
+       
+       System.out.println(String.format(" :>>  %s",b));
+// open the securty        
+       stat.executeUpdate(String.format("ALTER TABLE BOOK_Author CHECK CONSTRAINT FK__BOOK_Autho__ISBN__0DAF0CB0"));
+           return true ; 
+            } catch (SQLException ex) {
+                Logger.getLogger(SmallTools.class.getName()).log(Level.SEVERE, null, ex);
+           return false ; 
+            }
+//           return true ; 
+       
+   }
+ public static boolean delete_data(Connection conn,String ispn , Search defult){
+            try {
+                Statement stat =  conn.createStatement();
+//                close  the secure
+                      stat.executeUpdate(String.format("ALTER TABLE BOOK_Author NOCHECK CONSTRAINT FK__BOOK_Autho__ISBN__0DAF0CB0"));
+
+                stat.executeUpdate(String.format("DELETE from BOOK where REPLACE(ISBN, ' ' ,'') = REPLACE('%s', ' ' ,'') ", ispn));
+                stat.executeUpdate(String.format("DELETE from BOOK_Author where REPLACE(ISBN, ' ' ,'')  = REPLACE('%s', ' ' ,'') ", ispn));
+//                open secure
+                                      stat.executeUpdate(String.format("ALTER TABLE BOOK_Author NOCHECK CONSTRAINT FK__BOOK_Autho__ISBN__0DAF0CB0"));
+                                      defult.cancel_fun_redesign();
+                                      SmallTools.clear(new Label[] {defult.authorId,defult.city,defult.error_connect,defult.fname,defult.isbn,defult.lname, defult.pageCount , defult.phone ,defult.price , defult.publisherId ,defult.publisherName ,defult.title , defult.type });
+                                      defult.update.setVisible(false);
+                                      defult.delete.setVisible(false);
+                                      return true ; 
+            } catch (SQLException ex) {
+                Logger.getLogger(SmallTools.class.getName()).log(Level.SEVERE, null, ex);
+                return false ; 
+            }
+            
+ }
         
     
 }
